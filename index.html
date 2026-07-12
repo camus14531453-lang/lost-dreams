@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>故园旧梦 · Lost Dreams</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-cursor="default" data-motion="high" data-font="poetic" data-screen="boot">
+
+  <canvas id="fx-canvas" aria-hidden="true"></canvas>
+
+  <div id="app">
+
+    <!-- ============ 1. BOOT / LOADING ============ -->
+    <section id="screen-boot" class="screen active" data-screen-name="boot">
+      <div class="boot-inner">
+        <div class="boot-logo">故园旧梦</div>
+        <div class="boot-sub">L O S T&ensp;D R E A M S</div>
+        <div class="boot-bar"><i id="boot-progress"></i></div>
+        <div class="boot-note" data-i18n="boot.loading">正在拾起残片……</div>
+      </div>
+    </section>
+
+    <!-- ============ 2/3. TITLE SCREEN + MAIN MENU ============ -->
+    <section id="screen-title" class="screen" data-screen-name="title">
+      <div class="title-bg" aria-hidden="true">
+        <div class="title-haze"></div>
+        <div class="title-moon"></div>
+        <div class="title-ink"></div>
+      </div>
+
+      <header class="title-top">
+        <button id="lang-toggle" class="btn btn-ghost btn-sm" data-tip="i18n:tip.lang">中文 / EN</button>
+      </header>
+
+      <div class="title-core">
+        <h1 class="game-title">
+          <span class="gt-zh">故园旧梦</span>
+          <span class="gt-line" aria-hidden="true"></span>
+          <span class="gt-en">Lost Dreams</span>
+        </h1>
+        <p class="tagline" data-i18n="title.tagline">人的记忆，像一条游动的鱼。</p>
+
+        <nav class="title-menu" aria-label="main menu">
+          <button id="btn-new"      class="btn btn-menu" data-i18n="title.start">开始游戏</button>
+          <button id="btn-continue" class="btn btn-menu" data-i18n="title.continue" disabled>继续游戏</button>
+          <button id="btn-chapters" class="btn btn-menu" data-i18n="title.chapters">章节选择</button>
+          <button id="btn-saves"    class="btn btn-menu" data-i18n="title.saves">存档 / 读档</button>
+          <button id="btn-settings" class="btn btn-menu" data-i18n="title.settings">设置</button>
+          <button id="btn-gallery"  class="btn btn-menu" data-i18n="title.gallery">结局图鉴</button>
+          <button id="btn-credits"  class="btn btn-menu" data-i18n="title.credits">制作信息</button>
+        </nav>
+      </div>
+
+      <footer class="title-foot">
+        <span class="version">ver 0.2.0 — <span data-i18n="title.rebuilt">重构版</span></span>
+      </footer>
+    </section>
+
+    <!-- ============ 5/6. GAME SCENE + CHOICE SCENE ============ -->
+    <section id="screen-game" class="screen" data-screen-name="game">
+      <div id="stage">
+        <img id="bg-a" class="bg-layer" alt="" draggable="false" />
+        <img id="bg-b" class="bg-layer" alt="" draggable="false" />
+        <div id="room-hub" hidden></div>
+        <div id="fish-strip" hidden><div id="fish-track"></div></div>
+        <video id="stage-video" playsinline hidden></video>
+        <canvas id="trace-canvas" hidden></canvas>
+        <div id="trace-ui" hidden>
+          <div id="trace-title" data-i18n="trace.title">封　存</div>
+          <div id="trace-hint" data-i18n="trace.hint">从发光的起点落笔，沿纹路描出这尾鱼</div>
+          <button id="trace-skip" class="btn btn-sm btn-ghost" data-i18n="trace.skip" hidden>跳过</button>
+        </div>
+        <div id="stage-flash" hidden></div>
+      </div>
+
+      <div id="game-ui">
+        <div id="hud-top">
+          <span id="hud-chapter" class="hud-chapter"></span>
+          <span class="hud-spacer"></span>
+          <button id="hud-stats" class="btn btn-ghost btn-sm" data-tip="i18n:stats.title" aria-expanded="false">
+            <span class="hud-stats-mark">◈</span><span data-i18n="stats.toggle">心象</span>
+          </button>
+          <button id="hud-lang" class="btn btn-ghost btn-sm" data-tip="i18n:tip.lang">中 / EN</button>
+          <button id="hud-hide" class="btn btn-ghost btn-sm" data-i18n="game.hide" data-tip="i18n:tip.hide">隐藏</button>
+          <button id="hud-menu" class="btn btn-ghost btn-sm" data-i18n="game.menu" data-tip="i18n:tip.menu">菜单</button>
+        </div>
+
+        <!-- 心象数值面板（可展开 / 收回） -->
+        <aside id="stats-panel" hidden>
+          <div class="stats-head" data-i18n="stats.title">心　象</div>
+          <div class="stat-row" data-stat="san">
+            <div class="stat-line">
+              <span class="stat-name" data-i18n="stats.san">神志</span>
+              <span class="stat-val"></span>
+              <span class="stat-delta"></span>
+            </div>
+            <div class="stat-bar"><i></i></div>
+            <div class="stat-hint" data-i18n="stats.sanHint"></div>
+          </div>
+          <div class="stat-row" data-stat="fade">
+            <div class="stat-line">
+              <span class="stat-name" data-i18n="stats.fade">褪色</span>
+              <span class="stat-val"></span>
+              <span class="stat-delta"></span>
+            </div>
+            <div class="stat-bar"><i></i></div>
+            <div class="stat-hint" data-i18n="stats.fadeHint"></div>
+          </div>
+          <div class="stat-row" data-stat="love">
+            <div class="stat-line">
+              <span class="stat-name" data-i18n="stats.love">眷恋</span>
+              <span class="stat-val"></span>
+              <span class="stat-delta"></span>
+            </div>
+            <div class="stat-bar"><i></i></div>
+            <div class="stat-hint" data-i18n="stats.loveHint"></div>
+          </div>
+        </aside>
+
+        <div id="choice-area" hidden></div>
+
+        <div id="dialog-wrap">
+          <div id="namebox" hidden><span id="name-text"></span></div>
+          <div id="dialog-box" data-tip="">
+            <div id="dialog-text"></div>
+            <div id="continue-hint" aria-hidden="true"></div>
+          </div>
+          <div id="control-bar">
+            <button id="ctl-auto" class="btn btn-ctl" data-i18n="game.auto" data-tip="i18n:tip.auto">自动</button>
+            <button id="ctl-skip" class="btn btn-ctl" data-i18n="game.skip" data-tip="i18n:tip.skip">快进</button>
+            <button id="ctl-log"  class="btn btn-ctl" data-i18n="game.log"  data-tip="i18n:tip.log">记录</button>
+            <button id="ctl-save" class="btn btn-ctl" data-i18n="game.save" data-tip="i18n:tip.save">存档</button>
+            <button id="ctl-load" class="btn btn-ctl" data-i18n="game.load" data-tip="i18n:tip.load">读档</button>
+            <button id="ctl-set"  class="btn btn-ctl" data-i18n="game.settings" data-tip="i18n:tip.set">设置</button>
+          </div>
+        </div>
+
+        <div id="room-actions" hidden></div>
+        <div id="video-hint" hidden data-i18n="game.skipVideo">点击跳过 ▸</div>
+        <div id="click-hint" hidden>
+          <span class="ch-text" data-i18n="game.clickContinue">点击继续</span>
+          <span class="ch-arrow" aria-hidden="true"></span>
+        </div>
+      </div>
+
+      <!-- 血色囚困结局覆盖层 -->
+      <div id="blood-overlay" hidden>
+        <div id="blood-veil"></div>
+        <div id="blood-text"></div>
+        <div id="blood-epigraph"></div>
+      </div>
+    </section>
+
+    <!-- ============ 7. SAVE / LOAD ============ -->
+    <section id="screen-saves" class="screen sub-screen" data-screen-name="saves">
+      <div class="sub-inner">
+        <header class="sub-head">
+          <h2 id="saves-title" data-i18n="saves.title">存档 / 读档</h2>
+          <button class="btn btn-back" data-back data-i18n="common.back">返回</button>
+        </header>
+        <div class="saves-tabs" role="tablist">
+          <button id="tab-save" class="btn btn-tab" role="tab" data-i18n="saves.tabSave">存 档</button>
+          <button id="tab-load" class="btn btn-tab" role="tab" data-i18n="saves.tabLoad">读 档</button>
+        </div>
+        <div id="slot-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============ 8. SETTINGS ============ -->
+    <section id="screen-settings" class="screen sub-screen" data-screen-name="settings">
+      <div class="sub-inner sub-narrow">
+        <header class="sub-head">
+          <h2 data-i18n="settings.title">设置</h2>
+          <button class="btn btn-back" data-back data-i18n="common.back">返回</button>
+        </header>
+
+        <div class="settings-list">
+          <div class="set-row">
+            <label data-i18n="settings.lang">语言</label>
+            <div class="seg" id="set-lang">
+              <button class="btn btn-seg" data-val="zh">中文</button>
+              <button class="btn btn-seg" data-val="en">English</button>
+            </div>
+          </div>
+          <div class="set-row">
+            <label data-i18n="settings.textSpeed">文字速度</label>
+            <input type="range" id="set-textspeed" min="1" max="10" step="1" />
+            <span class="set-val" id="val-textspeed"></span>
+          </div>
+          <div class="set-row">
+            <label data-i18n="settings.autoSpeed">自动播放速度</label>
+            <input type="range" id="set-autospeed" min="1" max="10" step="1" />
+            <span class="set-val" id="val-autospeed"></span>
+          </div>
+          <div class="set-row">
+            <label data-i18n="settings.music">音乐音量</label>
+            <input type="range" id="set-music" min="0" max="100" step="5" />
+            <span class="set-val" id="val-music"></span>
+          </div>
+          <div class="set-row">
+            <label data-i18n="settings.sfx">音效音量</label>
+            <input type="range" id="set-sfx" min="0" max="100" step="5" />
+            <span class="set-val" id="val-sfx"></span>
+          </div>
+          <div class="set-row">
+            <label data-i18n="settings.fullscreen">全屏</label>
+            <div class="seg" id="set-fullscreen">
+              <button class="btn btn-seg" data-val="on" data-i18n="common.on">开</button>
+              <button class="btn btn-seg" data-val="off" data-i18n="common.off">关</button>
+            </div>
+          </div>
+          <div class="set-row">
+            <label data-i18n="settings.motion">动效强度</label>
+            <div class="seg" id="set-motion">
+              <button class="btn btn-seg" data-val="low"  data-i18n="settings.motionLow">低</button>
+              <button class="btn btn-seg" data-val="mid"  data-i18n="settings.motionMid">中</button>
+              <button class="btn btn-seg" data-val="high" data-i18n="settings.motionHigh">高</button>
+            </div>
+          </div>
+          <div class="set-row">
+            <label data-i18n="settings.font">字体模式</label>
+            <div class="seg" id="set-font">
+              <button class="btn btn-seg" data-val="poetic"   data-i18n="settings.fontPoetic">诗性</button>
+              <button class="btn btn-seg" data-val="readable" data-i18n="settings.fontReadable">易读</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 9. GALLERY / ENDINGS ============ -->
+    <section id="screen-gallery" class="screen sub-screen" data-screen-name="gallery">
+      <div class="sub-inner">
+        <header class="sub-head">
+          <h2 data-i18n="gallery.title">结局图鉴</h2>
+          <button class="btn btn-back" data-back data-i18n="common.back">返回</button>
+        </header>
+        <p class="sub-note" data-i18n="gallery.note">被拾回的梦，会在这里留下痕迹。</p>
+        <div id="gallery-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============ 10. CREDITS ============ -->
+    <section id="screen-credits" class="screen sub-screen" data-screen-name="credits">
+      <div class="sub-inner sub-narrow">
+        <header class="sub-head">
+          <h2 data-i18n="credits.title">制作信息</h2>
+          <button class="btn btn-back" data-back data-i18n="common.back">返回</button>
+        </header>
+        <div class="credits-body">
+          <div class="credits-name">故园旧梦<span>Lost Dreams</span></div>
+          <dl class="credits-list">
+            <dt data-i18n="credits.originalTitle">原作</dt>
+            <dd>《故园旧梦》</dd>
+            <dt data-i18n="credits.original">原案 / 美术 / 音乐</dt>
+            <dd>Raven</dd>
+            <dt data-i18n="credits.thanks">特别致意</dt>
+            <dd data-i18n="credits.thanksBody">致所有存放在夜里的记忆。</dd>
+          </dl>
+          <div class="credits-ver">ver 0.2.0 · 2026</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHAPTER SELECT ============ -->
+    <section id="screen-chapters" class="screen sub-screen" data-screen-name="chapters">
+      <div class="sub-inner">
+        <header class="sub-head">
+          <h2 data-i18n="chapters.title">章节选择</h2>
+          <button class="btn btn-back" data-back data-i18n="common.back">返回</button>
+        </header>
+        <p class="sub-note" data-i18n="chapters.note">走过的路，可以再走一遍。</p>
+        <div id="chapter-grid"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ============ OVERLAYS ============ -->
+
+  <div id="log-overlay" class="overlay" hidden>
+    <div class="overlay-panel">
+      <header class="sub-head">
+        <h2 data-i18n="log.title">对话记录</h2>
+        <button class="btn btn-back" data-close-overlay data-i18n="common.close">关闭</button>
+      </header>
+      <ul id="log-list"></ul>
+    </div>
+  </div>
+
+  <div id="help-overlay" class="overlay" hidden>
+    <div class="overlay-panel overlay-small">
+      <header class="sub-head">
+        <h2 data-i18n="help.title">操作提示</h2>
+        <button class="btn btn-back" data-close-overlay data-i18n="common.close">关闭</button>
+      </header>
+      <ul class="help-list">
+        <li><kbd>Space / Enter</kbd><span data-i18n="help.advance">继续对话</span></li>
+        <li><kbd>Esc</kbd><span data-i18n="help.esc">菜单 / 关闭弹窗</span></li>
+        <li><kbd>H</kbd><span data-i18n="help.hide">隐藏界面</span></li>
+        <li><kbd>S</kbd> / <kbd>L</kbd><span data-i18n="help.saveload">存档 / 读档</span></li>
+        <li><kbd>A</kbd><span data-i18n="help.auto">自动播放</span></li>
+        <li><kbd>Ctrl / Shift</kbd><span data-i18n="help.skip">按住快进</span></li>
+      </ul>
+      <div class="help-foot">
+        <button id="help-dismiss" class="btn" data-i18n="help.dontShow">知道了，不再显示</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NAME INPUT ============ -->
+  <div id="name-overlay" class="overlay" hidden>
+    <div class="modal name-modal">
+      <div class="name-prompt" data-i18n="name.prompt">你的名字是？</div>
+      <input id="name-input" type="text" maxlength="12" autocomplete="off" spellcheck="false" />
+      <div class="modal-actions">
+        <button id="name-confirm" class="btn btn-primary" data-i18n="name.confirm">就叫这个</button>
+        <button id="name-skip" class="btn" data-i18n="name.skip">保持无名</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 11. CONFIRM MODAL ============ -->
+  <div id="confirm-modal" class="overlay" hidden>
+    <div class="modal">
+      <button class="modal-x" data-close-overlay aria-label="close">×</button>
+      <div id="confirm-text"></div>
+      <div class="modal-actions">
+        <button id="confirm-ok" class="btn btn-primary" data-i18n="common.confirm">确认</button>
+        <button id="confirm-cancel" class="btn" data-i18n="common.cancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" hidden></div>
+  <div id="tooltip" hidden></div>
+  <div id="fader"></div>
+
+  <div id="cursor" aria-hidden="true">
+    <div class="c-dot"></div>
+    <div class="c-ring"></div>
+    <div class="c-glyph">✦</div>
+  </div>
+
+  <script src="assets/hotspot-masks.js"></script>
+  <script src="i18n.js"></script>
+  <script src="story.js"></script>
+  <script src="save-system.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
