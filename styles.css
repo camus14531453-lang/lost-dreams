@@ -68,6 +68,9 @@ button { font-family: inherit; color: inherit; }
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
+  /* 位置由 JS 写入 CSS 变量，子元素用 transform 消费（GPU 合成，零 layout） */
+  --cx: -100px; --cy: -100px;   /* dot：即时跟随鼠标 */
+  --rx: -100px; --ry: -100px;   /* ring/glyph：带惯性滞后 */
 }
 body.cursor-active #cursor { opacity: 1; }
 @media (pointer: coarse) { #cursor { display: none; } }
@@ -78,20 +81,20 @@ body.cursor-active #cursor { opacity: 1; }
   border-radius: 50%;
   background: var(--moon);
   box-shadow: 0 0 10px rgba(233, 228, 211, 0.9), 0 0 24px rgba(233, 228, 211, 0.35);
-  transform: translate(-50%, -50%);
+  transform: translate(var(--cx), var(--cy)) translate(-50%, -50%);
 }
 #cursor .c-ring {
   position: absolute;
   width: 26px; height: 26px;
   border-radius: 50%;
   border: 1px solid rgba(233, 228, 211, 0.35);
-  transform: translate(-50%, -50%) scale(0.6);
+  transform: translate(var(--rx), var(--ry)) translate(-50%, -50%) scale(0.6);
   opacity: 0;
   transition: transform 0.25s var(--ease-soft), opacity 0.25s, border-color 0.25s;
 }
 #cursor .c-glyph {
   position: absolute;
-  transform: translate(-50%, -50%) scale(0.4) rotate(-30deg);
+  transform: translate(var(--rx), var(--ry)) translate(-50%, -50%) scale(0.4) rotate(-30deg);
   color: var(--gold);
   font-size: 15px;
   text-shadow: 0 0 12px rgba(201, 168, 106, 0.8);
@@ -102,18 +105,18 @@ body.cursor-active #cursor { opacity: 1; }
 /* 可点击：光圈扩大 + 墨迹涟漪感 */
 body[data-cursor="pointer"] #cursor .c-ring {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate(var(--rx), var(--ry)) translate(-50%, -50%) scale(1);
   border-color: var(--gold-dim);
 }
 /* 分支选择：出现发光符号 */
 body[data-cursor="choice"] #cursor .c-ring {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1.25);
+  transform: translate(var(--rx), var(--ry)) translate(-50%, -50%) scale(1.25);
   border-color: var(--gold);
 }
 body[data-cursor="choice"] #cursor .c-glyph {
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  transform: translate(var(--rx), var(--ry)) translate(-50%, -50%) scale(1) rotate(0deg);
 }
 /* 不可点击：降低亮度 */
 body[data-cursor="disabled"] #cursor .c-dot {
@@ -177,6 +180,7 @@ body[data-cursor="disabled"] #cursor .c-dot {
   letter-spacing: 0.35em;
   margin-left: 0.35em; /* 平衡字距 */
   color: var(--moon);
+  text-shadow: 0 0 26px rgba(233,228,211,0.2);
   animation: breath 3.2s ease-in-out infinite;
 }
 .boot-sub {
@@ -207,8 +211,8 @@ body[data-cursor="disabled"] #cursor .c-dot {
 }
 
 @keyframes breath {
-  0%, 100% { opacity: 0.85; text-shadow: 0 0 18px rgba(233,228,211,0.12); }
-  50%      { opacity: 1;    text-shadow: 0 0 34px rgba(233,228,211,0.3); }
+  0%, 100% { opacity: 0.82; }
+  50%      { opacity: 1; }
 }
 
 /* ============================================================
@@ -321,8 +325,8 @@ body[data-cursor="disabled"] #cursor .c-dot {
   color: var(--mist);
 }
 @keyframes titleBreath {
-  0%, 100% { text-shadow: 0 0 30px rgba(233,228,211,0.12), 0 2px 0 rgba(0,0,0,0.4); }
-  50%      { text-shadow: 0 0 60px rgba(233,228,211,0.3),  0 2px 0 rgba(0,0,0,0.4); }
+  0%, 100% { opacity: 0.9; }
+  50%      { opacity: 1; }
 }
 
 .tagline {
@@ -918,8 +922,8 @@ body[data-font="readable"] #dialog-text {
   animation: hintFloat 1.4s ease-in-out infinite;
 }
 @keyframes clickPulse {
-  0%, 100% { opacity: 0.7; box-shadow: 0 0 18px rgba(201,168,106,0.1), 0 6px 20px rgba(0,0,0,0.5); }
-  50%      { opacity: 1;   box-shadow: 0 0 34px rgba(201,168,106,0.32), 0 6px 20px rgba(0,0,0,0.5); }
+  0%, 100% { opacity: 0.72; }
+  50%      { opacity: 1; }
 }
 
 /* ---- 心象数值面板 ---- */

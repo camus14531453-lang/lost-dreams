@@ -287,9 +287,12 @@
       requestAnimationFrame(loop);
       rx += (mx - rx) * 0.22;
       ry += (my - ry) * 0.22;
-      dot.style.transform = `translate(${mx}px, ${my}px) translate(-50%,-50%)`;
-      ring.style.left = glyph.style.left = rx + 'px';
-      ring.style.top = glyph.style.top = ry + 'px';
+      // 只写 CSS 变量，位移由 CSS transform 消费（GPU 合成，不触发 layout）
+      const s = el.style;
+      s.setProperty('--cx', mx + 'px');
+      s.setProperty('--cy', my + 'px');
+      s.setProperty('--rx', rx + 'px');
+      s.setProperty('--ry', ry + 'px');
     }
     loop();
 
@@ -1456,6 +1459,9 @@
     let mx = 0;
     let raf = 0;
     let hovered = null;
+    let lastNorm = null;        // 脏标记：视差是否变化
+    let lastHoveredDrawn = undefined;
+    let introDone = false;
 
     // 视差深度：数值越大越靠前、移动越多（克制，避免露边）
     const PAR_FACTOR = 1.4;          // 视差位移系数
@@ -1553,9 +1559,15 @@
       // 入场：景深错位淡入，1s 内落定
       const now = performance.now();
       const k = Math.min(1, (now - introStart) / 1000);
+      const introRunning = k < 1;
+      // 脏标记：入场结束后，视差与悬停都没变 → 本帧什么都不写（避免 Safari 每帧重光栅化大图）
+      if (!introRunning && introDone && norm === lastNorm && hovered === lastHoveredDrawn) return;
+      if (!introRunning && !introDone) { introDone = true; applySpotFilters(); }
+      lastNorm = norm;
+      lastHoveredDrawn = hovered;
       const ease = 1 - Math.pow(1 - k, 3);
       hub.style.opacity = ease;
-      // 只做位移/缩放（GPU 合成，便宜）；辉光/灰度滤镜是静态的，由 applySpotFilters 在状态改变时设置一次
+      // 只做位移/缩放（GPU 合成，便宜）；辉光/灰度由 applySpotFilters 在状态改变时设置一次
       layers.forEach((l) => {
         const isHover = l.spot && hovered === l.spot;
         const off = -norm * l.par * PAR_FACTOR;
@@ -1569,21 +1581,22 @@
       });
     }
 
-    // 静态滤镜：仅在锁定/悬停状态改变时调用一次，避免每帧重算大图模糊
+    // 仅在锁定/悬停状态改变时调用一次。
+    // 锁定态用 opacity 变暗（GPU 合成，与视差 transform 不冲突，file:// 也安全）；
+    // 不用 grayscale 滤镜——滤镜 + 每帧 transform 会让 Safari 每帧重光栅化整张大图。
     function applySpotFilters() {
       spots.forEach(s => {
         const el = s.el;
         if (spotLocked(s)) {
-          el.style.filter = 'grayscale(1) brightness(0.42) contrast(0.9)';
+          el.style.filter = '';
+          el.style.opacity = '0.38';
           el.style.zIndex = '';
-        } else if (hovered === s) {
-          el.style.filter =
-            'brightness(1.13) saturate(1.05) ' +
-            'drop-shadow(0 0 16px rgba(233,224,196,0.5)) ' +
-            'drop-shadow(0 0 34px rgba(201,168,106,0.28)) ' +
-            'drop-shadow(0 14px 26px rgba(0,0,0,0.55))';
+        } else if (hovered === s && introDone) {
+          el.style.opacity = '';
+          el.style.filter = 'brightness(1.13) saturate(1.05) drop-shadow(0 0 18px rgba(220,200,150,0.55))';
           el.style.zIndex = '5';
         } else {
+          el.style.opacity = '';
           el.style.filter = '';
           el.style.zIndex = '';
         }
@@ -1657,6 +1670,9 @@
       actions.hidden = false;
       hub.style.opacity = 0;
       introStart = performance.now();
+      introDone = false;
+      lastNorm = null;
+      lastHoveredDrawn = undefined;
       activeFlag = true;
       hub.addEventListener('mousemove', onMove);
       hub.addEventListener('click', onClick);
